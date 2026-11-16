@@ -24,13 +24,17 @@ CLIPS=(
  "c12 $B 19.0 2.9 1.00 1.08"
 )
 GRADE="hqdn3d=2:2:4:4,eq=contrast=1.08:saturation=1.12:gamma=0.97,colorbalance=rs=-0.04:bs=0.05:rh=0.05:bh=-0.04:gh=0.01,unsharp=5:5:0.6"
+# CLIPS_FILE : liste alternative « id A|B|C|D|E début durée zoom0 zoom1 » (une ligne par plan)
+if [[ -n "${CLIPS_FILE:-}" ]]; then
+  CLIPS=(); while read -r id L ss dur z0 z1; do [[ -z "$id" || "$id" == \#* ]] && continue; CLIPS+=("$id ${!L} $ss $dur $z0 $z1"); done < "$CLIPS_FILE"
+fi
 for line in "${CLIPS[@]}"; do
   read -r id src ss dur z0 z1 <<<"$line"
   [[ -n "${ONLY:-}" && "$ONLY" != *"$id"* ]] && continue
   n=$(python3 -c "print(round($dur*30))")
-  ffmpeg -v error -y -ss "$ss" -t "$dur" -i "$src" -an -vf "vidstabdetect=shakiness=6:accuracy=12:result=$W/clips/$id.trf" -f null -
+  ffmpeg -nostdin -v error -y -ss "$ss" -t "$dur" -i "$src" -an -vf "vidstabdetect=shakiness=6:accuracy=12:result=$W/clips/$id.trf" -f null -
   # push-in : zoom interpolé linéairement sur la durée du plan, recadrage centré
-  ffmpeg -v error -y -ss "$ss" -t "$dur" -i "$src" -an -vf "\
+  ffmpeg -nostdin -v error -y -ss "$ss" -t "$dur" -i "$src" -an -vf "\
 vidstabtransform=input=$W/clips/$id.trf:smoothing=18:optzoom=1:interpol=bicubic,\
 scale=1080:1920:flags=lanczos,setsar=1,$GRADE,\
 scale=w='trunc(1080*($z0+($z1-$z0)*t/$dur)/2)*2':h=-2:eval=frame:flags=bicubic,crop=1080:1920,\

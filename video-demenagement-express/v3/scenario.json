@@ -1,0 +1,146 @@
+{
+ "fps": 30,
+ "end_card": 8.0,
+ "plans": [
+  {
+   "id": "V01",
+   "dur": 3.0,
+   "vo": "Déménager seul à Cotonou ? C'est souvent une vraie galère."
+  },
+  {
+   "id": "V02",
+   "dur": 4.0,
+   "vo": "Trouver un camion, porter des meubles lourds, risquer la casse, et perdre un temps précieux."
+  },
+  {
+   "id": "V03",
+   "dur": 3.5
+  },
+  {
+   "id": "V04",
+   "dur": 2.0,
+   "vo": "Avec Déménagement Express, détendez-vous : on s'occupe de tout, de A à Z."
+  },
+  {
+   "id": "V05",
+   "dur": 3.5
+  },
+  {
+   "id": "V06",
+   "dur": 2.0,
+   "vo": "L'emballage : chaque meuble est protégé sous film, et chaque colis est étiqueté."
+  },
+  {
+   "id": "V07",
+   "dur": 2.5
+  },
+  {
+   "id": "V08",
+   "dur": 2.0
+  },
+  {
+   "id": "V09",
+   "dur": 2.5,
+   "vo": "La manutention : escaliers, couloirs, étages, notre équipe porte tout, en sécurité."
+  },
+  {
+   "id": "V10",
+   "dur": 2.0
+  },
+  {
+   "id": "V11",
+   "dur": 2.5
+  },
+  {
+   "id": "V12",
+   "dur": 2.0,
+   "vo": "Le transport : un chargement soigné, jusqu'à votre nouvelle adresse."
+  },
+  {
+   "id": "V13",
+   "dur": 1.0
+  },
+  {
+   "id": "V14",
+   "dur": 2.0
+  },
+  {
+   "id": "V15",
+   "dur": 2.0,
+   "vo": "L'installation : chaque meuble retrouve sa place."
+  },
+  {
+   "id": "V16",
+   "dur": 2.0
+  },
+  {
+   "id": "V17",
+   "dur": 5.5,
+   "vo": "Professionnalisme, rapidité, zéro stress : vous avez l'esprit tranquille."
+  }
+ ],
+ "end_vo": "Contactez-nous dès maintenant : zéro un, soixante-six, trente-cinq, cinquante-cinq, zéro neuf.",
+ "end_sub": "Contactez-nous : +229 01 66 35 55 09",
+ "sections": [
+  {
+   "type": "probleme",
+   "from": "V01",
+   "to": "V03",
+   "l1": "Déménager seul à Cotonou ?",
+   "l2": "Une vraie galère !",
+   "items": [
+    "Trouver un camion fiable",
+    "Porter des meubles lourds",
+    "Risquer la casse",
+    "Perdre un temps précieux"
+   ]
+  },
+  {
+   "type": "solution",
+   "from": "V04",
+   "to": "V05",
+   "l1": "Détendez-vous,",
+   "l2": "on s'occupe de tout",
+   "l3": "DE A À Z"
+  },
+  {
+   "type": "hashtag",
+   "from": "V06",
+   "to": "V08",
+   "txt": "#L'EMBALLAGE",
+   "sub": "Film de protection · Colis étiquetés"
+  },
+  {
+   "type": "hashtag",
+   "from": "V09",
+   "to": "V11",
+   "txt": "#LA MANUTENTION",
+   "sub": "Escaliers · Couloirs · Étages"
+  },
+  {
+   "type": "hashtag",
+   "from": "V12",
+   "to": "V14",
+   "txt": "#LE TRANSPORT",
+   "sub": "Chargement soigné, livraison à bon port"
+  },
+  {
+   "type": "hashtag",
+   "from": "V15",
+   "to": "V16",
+   "txt": "#L'INSTALLATION",
+   "sub": "Chaque meuble à sa place"
+  },
+  {
+   "type": "atouts",
+   "from": "V17",
+   "to": "V17",
+   "items": [
+    "PROFESSIONNALISME",
+    "RAPIDITÉ",
+    "ZÉRO STRESS",
+    "ESPRIT TRANQUILLE"
+   ]
+  }
+ ]
+}

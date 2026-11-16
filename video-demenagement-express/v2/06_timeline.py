@@ -5,7 +5,7 @@ import json, os, subprocess, sys, wave
 import numpy as np
 here = os.path.dirname(os.path.abspath(__file__))
 vdir, out = sys.argv[1], sys.argv[2]; os.makedirs(out, exist_ok=True)
-sc = json.load(open(os.path.join(here, 'scenario.json')))
+sc = json.load(open(os.environ.get('SCENARIO') or os.path.join(here, 'scenario.json')))
 
 def load(p):
     with wave.open(p) as w:
@@ -15,8 +15,10 @@ def load(p):
     return a, sr
 
 t, prev_end, plans, cues, clips = 0.0, 0.0, [], [], []
-items = [(p['id'], p['dur'], p['vo'], p['vo'], p['titre']) for p in sc['plans']] + [('END', sc['end_card'], sc['end_vo'], sc['end_sub'], 'Carte de fin')]
+items = [(p['id'], p['dur'], p.get('vo', ''), p.get('vo', ''), p.get('titre', '')) for p in sc['plans']] + [('END', sc['end_card'], sc['end_vo'], sc['end_sub'], 'Carte de fin')]
 for pid, dur, vo, sub, titre in items:
+    if not vo:                       # plan sans voix (la phrase précédente peut déborder dessus)
+        plans.append({'id': pid, 'start': round(t, 3), 'dur': dur, 'titre': titre}); t += dur; continue
     a, sr = load(os.path.join(vdir, pid + '.wav'))
     st = max(t + .25, prev_end + .2) if pid != 'END' else max(t + .9, prev_end + .2)
     L = len(a) / sr; clips.append((st, a)); prev_end = st + L
@@ -44,7 +46,10 @@ subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', os.path.join(out, 'vo_raw.w
     'highpass=f=85,equalizer=f=220:t=q:w=1:g=-2,equalizer=f=3200:t=q:w=1.2:g=3.5,equalizer=f=9000:t=h:w=1:g=2,'
     'acompressor=threshold=-20dB:ratio=3.5:attack=5:release=120:makeup=4,aecho=0.8:0.5:35|60:0.12|0.07,aresample=48000',
     '-ac', '2', os.path.join(out, 'vo.wav')], check=True)
-tl = {'total': total, 'outro': plans[-1]['start'], 'plans': plans, 'cues': cues,
+# sections graphiques (v3) : de 'from' à 'to' inclus
+pos = {p['id']: p for p in plans}
+secs = [dict(s_, t0=pos[s_['from']]['start'], t1=round(pos[s_['to']]['start'] + pos[s_['to']]['dur'], 3)) for s_ in sc.get('sections', [])]
+tl = {'total': total, 'sections': secs, 'outro': plans[-1]['start'], 'plans': plans, 'cues': cues,
       'vo_spans': [[round(st, 3), round(st + len(a) / sr, 3)] for st, a in clips]}
 json.dump(tl, open(os.path.join(out, 'timeline.json'), 'w'), ensure_ascii=False, indent=1)
 for p in plans: print(p)

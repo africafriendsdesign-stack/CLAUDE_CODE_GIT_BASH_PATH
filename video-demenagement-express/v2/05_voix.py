@@ -5,8 +5,8 @@ length_scale > 1 = débit plus lent."""
 import json, os, subprocess, sys
 model, out = sys.argv[1], sys.argv[2]; ls = sys.argv[3] if len(sys.argv) > 3 else '1.0'
 os.makedirs(out, exist_ok=True)
-sc = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scenario.json')))
-lines = [(p['id'], p['vo']) for p in sc['plans']] + [('END', sc['end_vo'])]
+sc = json.load(open(os.environ.get('SCENARIO') or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scenario.json')))
+lines = [(p['id'], p['vo']) for p in sc['plans'] if p.get('vo')] + [('END', sc['end_vo'])]
 for pid, txt in lines:
     wav = os.path.join(out, pid + '.wav')
     subprocess.run([sys.executable, '-m', 'piper', '-m', model, '-f', wav, '--length-scale', ls,

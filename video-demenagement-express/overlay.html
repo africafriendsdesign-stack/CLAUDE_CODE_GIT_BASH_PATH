@@ -17,7 +17,7 @@ const BRAND = {
   tagline: 'Votre déménagement, sans stress.',
   phone: '+229 01 66 35 55 09', cta: 'DEMANDEZ VOTRE DEVIS'
 };
-const CUTS = [3.0, 11.5, 20.5, 27.5];          // volets graphiques (cachent les coupes)
+let CUTS = [3.0, 11.5, 20.5, 27.5];          // volets graphiques (cachent les coupes)
 const SECTIONS = [
   { t: 3.15,  n: '01', a: 'EMBALLAGE',    b: 'PROFESSIONNEL', s: 'Film de protection et étiquetage' },
   { t: 11.65, n: '02', a: 'MANUTENTION',  b: 'SÉCURISÉE',     s: 'Une équipe formée et équipée' },
@@ -29,7 +29,7 @@ const CHIPS = [
   { t0: 18.6,  t1: 20.25, txt: 'Escaliers, couloirs, étages' },
 ];
 let END = 32.5, OUTRO = 27.5, BUG0 = 3.4, BUG1 = 27.0;
-let MODE = 'v1', CUES = [], PLANS = [];  // v2 : sous-titres + titres de plans (animatic)
+let MODE = 'v1', CUES = [], PLANS = [], SECS = [];  // v2 : sous-titres + titres de plans (animatic)
 
 const c = document.getElementById('c'), x = c.getContext('2d');
 const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
@@ -264,7 +264,82 @@ function slate(t) {
   text('Clip IA à générer · ' + p.dur.toFixed(1) + ' s', 84, 780, 'IM', 40, 'rgba(255,255,255,.6)', {});
   x.fillStyle = 'rgba(255,255,255,.12)'; x.fillRect(84, 840, W - 168, 8); x.fillStyle = Y; x.fillRect(84, 840, (W - 168) * pr, 8);
 }
+/* ================= v3 : style « pub » (problème → solution → #services → atouts) ================= */
+function dim(a) { if (a > 0) { x.fillStyle = `rgba(0,0,0,${a})`; x.fillRect(0, 0, W, H); } }
+function xIcon(cx, cy, r) { x.fillStyle = O; x.beginPath(); x.arc(cx, cy, r, 0, 7); x.fill(); x.strokeStyle = WH; x.lineWidth = r * .22; x.lineCap = 'round';
+  x.beginPath(); x.moveTo(cx - r * .35, cy - r * .35); x.lineTo(cx + r * .35, cy + r * .35); x.moveTo(cx + r * .35, cy - r * .35); x.lineTo(cx - r * .35, cy + r * .35); x.stroke(); }
+function secProbleme(t, S) {
+  const k = io(t, S.t0, .4, S.t1 - .3, .3); dim(.38 * k);
+  // carte titre
+  const cp = eBack(lin(t, S.t0 + .15, S.t0 + .6)) * (1 - eIn(lin(t, S.t1 - .3, S.t1)));
+  const cw = measure(S.l1, 'IX', 50) + 150;
+  x.save(); x.globalAlpha = clamp(cp); x.translate(W / 2, 560); x.scale(.85 + .15 * cp, .85 + .15 * cp);
+  x.shadowColor = 'rgba(0,0,0,.4)'; x.shadowBlur = 30; x.fillStyle = WH; roundRect(-cw / 2, -60, cw, 120, 26); x.fill(); x.shadowColor = 'transparent';
+  x.fillStyle = K; roundRect(-cw / 2 + 22, -38, 76, 76, 18); x.fill(); text('?', -cw / 2 + 60, 22, 'IB', 58, Y, { align: 'center' });
+  text(S.l1, -cw / 2 + 118, 18, 'IX', 50, K); x.restore();
+  const l2 = fit(S.l2, 'IB', 860); maskText(S.l2, W / 2, 760, 'IB', Math.min(l2, 120), Y, eOut(lin(t, S.t0 + .7, S.t0 + 1.2)) * (1 - eIn(lin(t, S.t1 - .3, S.t1))), { align: 'center', shadow: 30, ls: -2 });
+  S.items.forEach((it, i) => {
+    const a = S.t0 + 4.1 + i * 1.35, p = eOut(lin(t, a, a + .45)) * (1 - eIn(lin(t, S.t1 - .35, S.t1 - .05)));
+    if (p <= 0) return; const w = measure(it, 'IX', 46) + 140, y0 = 880 + i * 128;
+    x.save(); x.globalAlpha = p; x.translate((1 - p) * -120, 0);
+    x.fillStyle = 'rgba(255,255,255,.95)'; roundRect(84, y0, w, 100, 50); x.fill();
+    xIcon(84 + 50, y0 + 50, 30); text(it, 84 + 100, y0 + 66, 'IX', 46, K); x.restore();
+  });
+}
+function secSolution(t, S) {
+  const k = io(t, S.t0, .35, S.t1 - .3, .3); dim(.42 * k);
+  const o = 1 - eIn(lin(t, S.t1 - .35, S.t1));
+  logoMark(W / 2, 560, 1.1, eBack(lin(t, S.t0 + .05, S.t0 + .5)) * o);
+  maskText(S.l1, W / 2, 790, 'IM', 64, WH, eOut(lin(t, S.t0 + .3, S.t0 + .8)) * o, { align: 'center', shadow: 20 });
+  maskText(S.l2, W / 2, 900, 'IB', Math.min(96, fit(S.l2, 'IB', 920)), WH, eOut(lin(t, S.t0 + .5, S.t0 + 1)) * o, { align: 'center', shadow: 30, ls: -1 });
+  const bp = eOut(lin(t, S.t0 + 1.2, S.t0 + 1.7)) * o, bw = measure(S.l3, 'IB', 120) + 80;
+  x.fillStyle = Y; x.fillRect(W / 2 - bw / 2, 950, bw * bp, 150);
+  maskText(S.l3, W / 2, 1070, 'IB', 120, K, eOut(lin(t, S.t0 + 1.4, S.t0 + 1.9)) * o, { align: 'center' });
+}
+function secHashtag(t, S) {
+  const big = io(t, S.t0 + .05, .45, S.t0 + 2.7, .35), small = io(t, S.t0 + 2.9, .4, S.t1 - .25, .25);
+  if (big > 0) {
+    dim(.3 * big);
+    const size = Math.min(140, fit(S.txt, 'IB', 860, -2)), tw = measure(S.txt, 'IB', size, -2), x0 = (W - tw) / 2;
+    x.save(); x.translate(0, 860); x.transform(1, 0, -.12, 1, 0, 0);
+    maskText(S.txt, x0, 0, 'IB', size, WH, eOut(lin(t, S.t0 + .05, S.t0 + .55)) * (1 - eIn(lin(t, S.t0 + 2.7, S.t0 + 3.05))), { shadow: 34, ls: -2 });
+    x.save(); x.beginPath(); x.rect(0, -size * 1.3, W, size * 1.6); x.clip();   // « # » en jaune
+    const pp = eOut(lin(t, S.t0 + .05, S.t0 + .55)) * (1 - eIn(lin(t, S.t0 + 2.7, S.t0 + 3.05)));
+    if (pp > 0) text('#', x0, (1 - pp) * size * 1.25, 'IB', size, Y, { ls: -2 });
+    x.restore();
+    x.fillStyle = Y; x.fillRect(x0, 40, tw * eOut(lin(t, S.t0 + .35, S.t0 + .9)) * big, 14);
+    x.restore();
+    maskText(S.sub, W / 2, 980, 'IS', 44, WH, eOut(lin(t, S.t0 + .5, S.t0 + 1)) * big, { align: 'center', shadow: 18, ls: 1 });
+  }
+  if (small > 0) {
+    const w = measure(S.txt, 'IB', 40) + 60;
+    x.save(); x.globalAlpha = small; x.translate((1 - small) * 60, 0);
+    x.fillStyle = Y; roundRect(W - 70 - w, 92, w, 72, 14); x.fill();
+    text(S.txt, W - 70 - w / 2, 142, 'IB', 40, K, { align: 'center' }); x.restore();
+  }
+}
+function secAtouts(t, S) {
+  const k = io(t, S.t0, .4, S.t1 - .3, .3); dim(.45 * k);
+  S.items.forEach((it, i) => {
+    const a = S.t0 + .3 + i * 1.1, p = eOut(lin(t, a, a + .45)) * (1 - eIn(lin(t, S.t1 - .35, S.t1)));
+    if (p <= 0) return; const y0 = 700 + i * 150, size = Math.min(104, fit(it, 'IB', 880, -1));
+    x.fillStyle = i % 2 ? Y : WH; x.fillRect(84, y0 - size * .78, 16 * p, size * .82);
+    maskText(it, 126, y0, 'IB', size, i % 2 ? Y : WH, p, { shadow: 26, ls: -1 });
+  });
+}
+function render3(t) {
+  x.clearRect(0, 0, W, H);
+  gradBottom(t < OUTRO ? .7 : 0, .62);
+  SECS.forEach(S => { if (t < S.t0 - .1 || t > S.t1 + .1) return;
+    ({ probleme: secProbleme, solution: secSolution, hashtag: secHashtag, atouts: secAtouts })[S.type](t, S); });
+  bug(t);
+  subs(t);
+  outro(t);
+  CUTS.forEach(T => wipe(t, T));
+  return c.toDataURL('image/png');
+}
 function render(t) {
+  if (MODE === 'v3') return render3(t);
   if (MODE === 'v2' || MODE === 'v2-animatic') return render2(t);
   return render1(t);
 }
@@ -288,6 +363,6 @@ function render1(t) {
   CUTS.forEach(T => wipe(t, T));
   return c.toDataURL('image/png');
 }
-window.configure = cfg => { MODE = cfg.mode; CUES = cfg.cues || []; PLANS = cfg.plans || []; END = cfg.end; OUTRO = cfg.outro; BUG0 = cfg.bug0; BUG1 = cfg.bug1; };
+window.configure = cfg => { SECS = cfg.sections || []; if (cfg.mode === 'v3') CUTS = SECS.slice(1).map(s => s.t0).concat([cfg.outro]); MODE = cfg.mode; CUES = cfg.cues || []; PLANS = cfg.plans || []; END = cfg.end; OUTRO = cfg.outro; BUG0 = cfg.bug0; BUG1 = cfg.bug1; };
 window.ready = Promise.all(['IB', 'IX', 'IS', 'IM'].map(f => document.fonts.load(`40px ${f}`, 'ÉÀ'))).then(() => true);
 </script></body></html>

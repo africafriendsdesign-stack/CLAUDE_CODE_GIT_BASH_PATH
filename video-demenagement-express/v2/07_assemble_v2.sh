@@ -4,15 +4,16 @@
 # Prérequis : 05_voix.py puis 06_timeline.py ont produit $W/v2/{vo.wav,timeline.json}.
 set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd); ROOT=$(dirname "$HERE")
-W=${W:-./work}; V2="$W/v2"; mkdir -p "$V2/plans"
+W=${W:-./work}; V2="$W/${TAG:-v2}"; mkdir -p "$V2/plans"
+CLIPS_DIR=${CLIPS_DIR:-$HERE/clips_ia}
 OUT=${OUT:-$HERE/Demenagement_Express_V2_9x16.mp4}
 TL="$V2/timeline.json"
 python3 "$ROOT/03_music.py" "$V2/music.wav" "$TL" >/dev/null
-GRADE="eq=contrast=1.05:saturation=1.08,colorbalance=rs=-0.03:bs=0.04:rh=0.04:bh=-0.03"
+GRADE=${GRADE:-"eq=contrast=1.05:saturation=1.08,colorbalance=rs=-0.03:bs=0.04:rh=0.04:bh=-0.03"}
 MISSING=()
 : > "$V2/plans/list.txt"
 while read -r id dur; do
-  src="$HERE/clips_ia/$id.mp4"; n=$(python3 -c "print(round($dur*30))")
+  src="$CLIPS_DIR/$id.mp4"; n=$(python3 -c "print(round($dur*30))")
   if [[ -f "$src" ]]; then
     # recadrage 9:16 centré, 30 fps, étalonnage commun pour unifier les clips IA
     ffmpeg -nostdin -v error -y -i "$src" -an -vf "scale=1080:1920:force_original_aspect_ratio=increase:flags=lanczos,crop=1080:1920,setsar=1,fps=30,$GRADE,tpad=stop_mode=clone:stop_duration=$dur,trim=end_frame=$n,setpts=PTS-STARTPTS" \
@@ -24,7 +25,7 @@ while read -r id dur; do
   echo "file '$V2/plans/$id.mp4'" >> "$V2/plans/list.txt"
 done < <(python3 -c "import json;[print(p['id'],p['dur']) for p in json.load(open('$TL'))['plans']]")
 echo "Clips manquants (cartes de repère) : ${MISSING[*]:-aucun}"
-MODE=v2; [[ ${#MISSING[@]} -gt 0 ]] && MODE=v2-animatic
+MODE=${MODE:-v2}; [[ ${#MISSING[@]} -gt 0 ]] && MODE=v2-animatic
 python3 - "$TL" "$V2/timeline_render.json" "${MISSING[@]}" <<'PY'
 import json, sys
 tl = json.load(open(sys.argv[1])); miss = set(sys.argv[3:])

@@ -10,7 +10,7 @@ const fs = require('fs'), path = require('path');
   await page.evaluate(() => window.ready);
   if (process.env.TIMELINE) {           // version 2 : timeline.json (+ MODE=v2 | v2-animatic)
     const tl = JSON.parse(fs.readFileSync(process.env.TIMELINE, 'utf8'));
-    await page.evaluate(cfg => configure(cfg), { mode: process.env.MODE || 'v2', cues: tl.cues, plans: tl.plans,
+    await page.evaluate(cfg => configure(cfg), { mode: process.env.MODE || 'v2', cues: tl.cues, plans: tl.plans, sections: tl.sections || [],
       end: tl.total, outro: tl.outro, bug0: 0.6, bug1: tl.outro - 0.4 });
   }
   let frames;
