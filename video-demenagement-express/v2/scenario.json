@@ -1,0 +1,68 @@
+{
+ "fps": 30,
+ "end_card": 7.5,
+ "plans": [
+  {
+   "id": "P01",
+   "dur": 4.5,
+   "titre": "Aube sur Cotonou, le camion arrive",
+   "vo": "À Cotonou, déménager rime souvent avec stress."
+  },
+  {
+   "id": "P02",
+   "dur": 5.0,
+   "titre": "L'équipe en gilets jaunes arrive chez la cliente",
+   "vo": "Avec Déménagement Express, une équipe de professionnels s'occupe de tout."
+  },
+  {
+   "id": "P03",
+   "dur": 4.0,
+   "titre": "Filmage d'un canapé (gros plan mains)",
+   "vo": "Chaque meuble est protégé sous film étirable,"
+  },
+  {
+   "id": "P04",
+   "dur": 4.0,
+   "titre": "Étiquetage des colis filmés",
+   "vo": "et chaque colis est étiqueté, pour que rien ne se perde."
+  },
+  {
+   "id": "P05",
+   "dur": 5.0,
+   "titre": "Portage dans l'escalier",
+   "vo": "Escaliers, couloirs, étages : nos déménageurs portent vos biens avec méthode,"
+  },
+  {
+   "id": "P06",
+   "dur": 3.0,
+   "titre": "Couloir, fauteuil emballé",
+   "vo": "en toute sécurité."
+  },
+  {
+   "id": "P07",
+   "dur": 4.0,
+   "titre": "Chargement et sanglage du camion",
+   "vo": "Le chargement est soigné, le transport sécurisé,"
+  },
+  {
+   "id": "P08",
+   "dur": 3.5,
+   "titre": "Le camion roule dans Cotonou au coucher du soleil",
+   "vo": "jusqu'à votre nouvelle adresse."
+  },
+  {
+   "id": "P09",
+   "dur": 4.5,
+   "titre": "Déballage et installation dans la nouvelle maison",
+   "vo": "À l'arrivée, nous déballons et installons chaque meuble à sa place."
+  },
+  {
+   "id": "P10",
+   "dur": 5.0,
+   "titre": "Salon terminé, cliente satisfaite",
+   "vo": "Déménagement Express. Livré. Installé. Sans stress."
+  }
+ ],
+ "end_vo": "Demandez votre devis : zéro un, soixante-six, trente-cinq, cinquante-cinq, zéro neuf.",
+ "end_sub": "Devis : +229 01 66 35 55 09"
+}

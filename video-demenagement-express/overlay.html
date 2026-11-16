@@ -28,7 +28,8 @@ const CHIPS = [
   { t0: 16.65, t1: 18.35, txt: 'Équipe formée et équipée' },
   { t0: 18.6,  t1: 20.25, txt: 'Escaliers, couloirs, étages' },
 ];
-const END = 32.5;
+let END = 32.5, OUTRO = 27.5, BUG0 = 3.4, BUG1 = 27.0;
+let MODE = 'v1', CUES = [], PLANS = [];  // v2 : sous-titres + titres de plans (animatic)
 
 const c = document.getElementById('c'), x = c.getContext('2d');
 const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
@@ -177,7 +178,7 @@ function chip(t, C) {
 
 /* ---------- 5. Signature permanente (coin haut) ---------- */
 function bug(t) {
-  const k = io(t, 3.4, .6, 27.0, .35); if (k <= 0) return;
+  const k = io(t, BUG0, .6, BUG1, .35); if (k <= 0) return;
   x.save(); x.globalAlpha = k * .95; x.translate(0, (1 - k) * -20);
   logoMark(110, 128, .42, 1);
   text(BRAND.l1, 150, 120, 'IB', 30, WH, { ls: 2, shadow: 14 });
@@ -198,7 +199,7 @@ function finale(t) {
 
 /* ---------- 7. Carte de fin ---------- */
 function outro(t) {
-  const a = 27.5; if (t < a - .4) return;
+  const a = OUTRO; if (t < a - .4) return;
   const bg = eOut(lin(t, a - .38, a)); if (bg <= 0) return;
   x.save(); x.globalAlpha = bg;
   x.fillStyle = K; x.fillRect(0, 0, W, H);
@@ -240,7 +241,43 @@ function outro(t) {
   const fe = lin(t, END - .3, END); if (fe > 0) { x.fillStyle = `rgba(0,0,0,${fe})`; x.fillRect(0, 0, W, H); }
 }
 
+/* ---------- v2 : sous-titres ---------- */
+function subs(t) {
+  const c = CUES.find(c => t >= c.t0 - .05 && t < c.t1 + .12); if (!c) return;
+  const k = eOut(lin(t, c.t0 - .05, c.t0 + .15)) * (1 - lin(t, c.t1, c.t1 + .12));
+  const size = 54, w = measure(c.txt, 'IX', size) + 64, h = 92, X0 = (W - w) / 2, Y0 = 1530;
+  x.save(); x.globalAlpha = k; x.translate(0, (1 - k) * 14);
+  x.fillStyle = 'rgba(11,11,12,.78)'; roundRect(X0, Y0, w, h, 18); x.fill();
+  x.fillStyle = Y; x.fillRect(X0, Y0 + 18, 7, h - 36);
+  text(c.txt, W / 2, Y0 + 63, 'IX', size, WH, { align: 'center' });
+  x.restore();
+}
+/* ---------- v2 : animatic (cartes de plans à remplacer par les clips IA) ---------- */
+function slate(t) {
+  const p = PLANS.find(p => t >= p.start && t < p.start + p.dur); if (!p || p.id === 'END') return;
+  x.fillStyle = '#1a1a1d'; x.fillRect(0, 0, W, H);
+  x.strokeStyle = 'rgba(255,255,255,.08)'; x.lineWidth = 2;
+  for (let i = 0; i < 12; i++) { x.beginPath(); x.moveTo(0, i * 180); x.lineTo(W, i * 180 + 400); x.stroke(); }
+  const pr = (t - p.start) / p.dur;
+  text(p.id, 84, 560, 'IB', 220, Y, {});
+  maskText(p.titre, 84, 700, 'IX', Math.min(56, fit(p.titre, 'IX', W - 168)), WH, 1, {});
+  text('Clip IA à générer · ' + p.dur.toFixed(1) + ' s', 84, 780, 'IM', 40, 'rgba(255,255,255,.6)', {});
+  x.fillStyle = 'rgba(255,255,255,.12)'; x.fillRect(84, 840, W - 168, 8); x.fillStyle = Y; x.fillRect(84, 840, (W - 168) * pr, 8);
+}
 function render(t) {
+  if (MODE === 'v2' || MODE === 'v2-animatic') return render2(t);
+  return render1(t);
+}
+function render2(t) {
+  x.clearRect(0, 0, W, H);
+  if (MODE === 'v2-animatic') slate(t);
+  gradBottom(t < OUTRO ? .7 : 0, .62);
+  bug(t);
+  subs(t);
+  outro(t);
+  return c.toDataURL('image/png');
+}
+function render1(t) {
   x.clearRect(0, 0, W, H);
   bug(t);
   intro(t);
@@ -251,5 +288,6 @@ function render(t) {
   CUTS.forEach(T => wipe(t, T));
   return c.toDataURL('image/png');
 }
+window.configure = cfg => { MODE = cfg.mode; CUES = cfg.cues || []; PLANS = cfg.plans || []; END = cfg.end; OUTRO = cfg.outro; BUG0 = cfg.bug0; BUG1 = cfg.bug1; };
 window.ready = Promise.all(['IB', 'IX', 'IS', 'IM'].map(f => document.fonts.load(`40px ${f}`, 'ÉÀ'))).then(() => true);
 </script></body></html>

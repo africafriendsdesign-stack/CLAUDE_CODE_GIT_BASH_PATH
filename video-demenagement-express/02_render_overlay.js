@@ -8,6 +8,11 @@ const fs = require('fs'), path = require('path');
   const page = await browser.newPage({ viewport: { width: 1080, height: 1920 } });
   await page.goto('file://' + path.resolve(__dirname, 'overlay.html'));
   await page.evaluate(() => window.ready);
+  if (process.env.TIMELINE) {           // version 2 : timeline.json (+ MODE=v2 | v2-animatic)
+    const tl = JSON.parse(fs.readFileSync(process.env.TIMELINE, 'utf8'));
+    await page.evaluate(cfg => configure(cfg), { mode: process.env.MODE || 'v2', cues: tl.cues, plans: tl.plans,
+      end: tl.total, outro: tl.outro, bug0: 0.6, bug1: tl.outro - 0.4 });
+  }
   let frames;
   if (process.argv[3] === '--stills') frames = process.argv[4].split(',').map(s => [Number(s), 's_' + s]);
   else { const a = Number(process.argv[3] || 0), b = Number(process.argv[4] || 32.5);

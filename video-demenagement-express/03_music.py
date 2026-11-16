@@ -6,9 +6,15 @@ Usage : python3 03_music.py sortie.wav
 import sys, wave
 import numpy as np
 
+import json
 SR, DUR, BPM = 48000, 32.5, 120
 BEAT = 60 / BPM
 CUTS = [3.0, 11.5, 20.5, 27.5]
+S0, OUT = 3.0, 27.5          # début batterie / début carte de fin
+VO = []                      # plages de voix off (pour le ducking)
+if len(sys.argv) > 2:        # version 2 : pilotée par timeline.json
+    tl = json.load(open(sys.argv[2]))
+    DUR, OUT = tl['total'], tl['outro']; S0 = 4.5; CUTS = [S0, OUT]; VO = tl['vo_spans']
 N = int(SR * DUR)
 t = np.arange(N) / SR
 rng = np.random.default_rng(7)
@@ -45,7 +51,7 @@ def note(n):  # numéro MIDI -> Hz
 
 
 def drums_on(x):  # batterie entre 3.0 et 27.5, coupée 0.5 s avant chaque volet (tension)
-    if x < 3.0 or x >= 27.25: return False
+    if x < S0 or x >= OUT - .25: return False
     return not any(T - 0.5 <= x < T for T in CUTS[1:3])
 
 
@@ -55,7 +61,7 @@ freq = 45 + 110 * np.exp(-kt * 28)
 kick = np.sin(2 * np.pi * np.cumsum(freq) / SR) * np.exp(-kt * 7.5)
 kick[:200] += rng.standard_normal(200) * np.linspace(.6, 0, 200)
 duck = np.ones(N)
-b = 3.0
+b = S0
 while b < DUR:
     if drums_on(b):
         add(kick, b, 0.95)
@@ -67,12 +73,12 @@ while b < DUR:
 cl = int(.25 * SR); ct = np.arange(cl) / SR
 clap = hp_fft(rng.standard_normal(cl), 900, 2) * (np.exp(-ct * 22) + .5 * np.exp(-((ct - .012) * 400) ** 2))
 hl = int(.06 * SR); hat = hp_fft(rng.standard_normal(hl), 7000, 3) * np.exp(-np.arange(hl) / SR * 70)
-b = 3.0
+b = S0
 while b < DUR:
     if drums_on(b + BEAT) : add(clap, b + BEAT, .32, .1)
     for k in range(4):
         x = b + k * BEAT / 2 + BEAT / 4
-        if drums_on(x) and x > 3.0 + 2 * BEAT: add(hat, x, .14 if k % 2 else .09, -.35 if k % 2 else .35)
+        if drums_on(x) and x > S0 + 2 * BEAT: add(hat, x, .14 if k % 2 else .09, -.35 if k % 2 else .35)
     b += 2 * BEAT
 
 # ---------- accords (pad) + basse ----------
@@ -92,9 +98,9 @@ for bi in range(int(np.ceil(DUR / BAR))):
     gate = ((tt / (BEAT / 2)) % 1 < .7).astype(float)
     bass[i0:i1] += (2 * ((tt * fb) % 1) - 1) * gate * .5 + np.sin(2 * np.pi * fb * tt) * gate * .5
 pad = lp_fft(pad, 1600, 2)
-pad_env = np.interp(t, [0, 2.5, 3, 27.5, 28.5, 31.5, 32.5], [.45, 1, .75, .75, 1, .9, 0])
+pad_env = np.interp(t, [0, S0 - .5, S0, OUT, OUT + 1, DUR - 1, DUR], [.45, 1, .75, .75, 1, .9, 0])
 pad *= pad_env * duck
-bass = lp_fft(bass, 320, 3) * np.interp(t, [0, 2.9, 3.0, 27.2, 27.5], [0, 0, 1, 1, 0]) * duck
+bass = lp_fft(bass, 320, 3) * np.interp(t, [0, S0 - .1, S0, OUT - .3, OUT], [0, 0, 1, 1, 0]) * duck
 # léger chorus stéréo sur le pad
 dl = int(.013 * SR)
 L += pad * .9 + bass * .55
@@ -102,8 +108,8 @@ R += np.concatenate([np.zeros(dl), pad[:-dl]]) * .9 + bass * .55
 
 # ---------- arpège pluck (sections) ----------
 pl = int(.22 * SR); pt = np.arange(pl) / SR
-b = 3.0; step = 0
-while b < 27.25:
+b = S0; step = 0
+while b < OUT - .25:
     root, chord = PROG[int(b / BAR) % 4]
     n = chord[[0, 2, 1, 3, 2, 1, 3, 2][step % 8]] + 24
     s = np.sign(np.sin(2 * np.pi * note(n) * pt)) * .5 + np.sin(2 * np.pi * note(n) * pt)
@@ -126,18 +132,24 @@ for T in CUTS:
 il = int(2.2 * SR); it = np.arange(il) / SR
 imp = np.sin(2 * np.pi * (38 + 40 * np.exp(-it * 9)) * it) * np.exp(-it * 2.2)
 imp += lp_fft(rng.standard_normal(il), 400, 2) * np.exp(-it * 6) * .8
-add(imp, .42, .9); add(imp, 27.62, 1.0)
+add(imp, .42, .9); add(imp, OUT + .12, 1.0)
 # riser vers le final
 rl = int(2.4 * SR); rt = np.arange(rl) / SR
 riser = hp_fft(rng.standard_normal(rl), 2500, 2) * (rt / rt[-1]) ** 3 * .25
 riser += np.sin(2 * np.pi * np.cumsum(200 + 900 * (rt / rt[-1]) ** 2) / SR) * (rt / rt[-1]) ** 3 * .05
-add(riser, 27.5 - 2.4, 1, 0)
+add(riser, OUT - 2.4, 1, 0)
 # sonnerie discrète sur le téléphone (carte de fin)
 for k in range(2):
     rgl = int(.09 * SR); rg = np.arange(rgl) / SR
     tone = (np.sin(2 * np.pi * 1320 * rg) + .5 * np.sin(2 * np.pi * 1760 * rg)) * np.exp(-rg * 25)
-    add(tone, 27.5 + 1.8 + k * .14, .12, .2)
+    add(tone, OUT + 1.8 + k * .14, .12, .2)
 
+# ---------- ducking sous la voix off ----------
+if VO:
+    g = np.ones(N)
+    for a, b in VO: g[int(max(0, a - .15) * SR): int(min(DUR, b + .25) * SR)] = .42
+    k = int(.12 * SR); g = np.convolve(g, np.ones(k) / k, 'same')
+    L *= g; R *= g
 # ---------- master ----------
 mix = np.stack([L, R], 1)
 mix *= np.interp(t, [0, .05, DUR - .6, DUR], [0, 1, 1, 0])[:, None]
