@@ -1,0 +1,255 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:IB;src:url(file:///usr/share/fonts/opentype/inter/InterDisplay-Black.otf)}
+@font-face{font-family:IX;src:url(file:///usr/share/fonts/opentype/inter/InterDisplay-ExtraBold.otf)}
+@font-face{font-family:IS;src:url(file:///usr/share/fonts/opentype/inter/Inter-SemiBold.otf)}
+@font-face{font-family:IM;src:url(file:///usr/share/fonts/opentype/inter/Inter-Medium.otf)}
+html,body{margin:0;background:transparent}
+</style></head>
+<body><canvas id="c" width="1080" height="1920"></canvas>
+<script>
+/* ====== DÉMÉNAGEMENT EXPRESS — calque motion design (1080x1920, 30 fps) ====== */
+const W = 1080, H = 1920;
+const Y = '#E4FF1A', O = '#FF6A13', K = '#0B0B0C', WH = '#FFFFFF';
+const BRAND = {
+  l1: 'DÉMÉNAGEMENT', l2: 'EXPRESS', city: 'COTONOU  ·  BÉNIN',
+  tagline: 'Votre déménagement, sans stress.',
+  phone: '+229 01 66 35 55 09', cta: 'DEMANDEZ VOTRE DEVIS'
+};
+const CUTS = [3.0, 11.5, 20.5, 27.5];          // volets graphiques (cachent les coupes)
+const SECTIONS = [
+  { t: 3.15,  n: '01', a: 'EMBALLAGE',    b: 'PROFESSIONNEL', s: 'Film de protection et étiquetage' },
+  { t: 11.65, n: '02', a: 'MANUTENTION',  b: 'SÉCURISÉE',     s: 'Une équipe formée et équipée' },
+  { t: 20.65, n: '03', a: 'INSTALLATION', b: 'CLÉ EN MAIN',   s: 'Chaque meuble à sa place' },
+];
+const CHIPS = [
+  { t0: 9.65,  t1: 11.25, txt: 'Chaque colis étiqueté' },
+  { t0: 16.65, t1: 18.35, txt: 'Équipe formée et équipée' },
+  { t0: 18.6,  t1: 20.25, txt: 'Escaliers, couloirs, étages' },
+];
+const END = 32.5;
+
+const c = document.getElementById('c'), x = c.getContext('2d');
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const lin = (t, a, b) => clamp((t - a) / (b - a));
+const eOut = p => p === 1 ? 1 : 1 - Math.pow(2, -10 * p);              // expo out
+const eIn = p => p === 0 ? 0 : Math.pow(2, 10 * p - 10);
+const eIO = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+const eBack = p => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); };
+// entrée/sortie d'un élément : 0→1 à l'entrée, 1→0 à la sortie
+const io = (t, a, d, b, d2) => eOut(lin(t, a, a + d)) * (1 - eIn(lin(t, b, b + d2)));
+
+function font(f, s) { x.font = `${s}px ${f}`; }
+function text(s, X, Yp, f, size, col, opts = {}) {
+  font(f, size); x.fillStyle = col; x.textBaseline = 'alphabetic';
+  x.textAlign = opts.align || 'left';
+  if ('letterSpacing' in x) x.letterSpacing = (opts.ls || 0) + 'px';
+  if (opts.shadow) { x.shadowColor = 'rgba(0,0,0,.55)'; x.shadowBlur = opts.shadow; x.shadowOffsetY = 4; }
+  x.fillText(s, X, Yp);
+  x.shadowColor = 'transparent'; x.shadowBlur = 0; x.shadowOffsetY = 0;
+  if ('letterSpacing' in x) x.letterSpacing = '0px';
+}
+function measure(s, f, size, ls = 0) { font(f, size); if ('letterSpacing' in x) x.letterSpacing = ls + 'px'; const w = x.measureText(s).width; if ('letterSpacing' in x) x.letterSpacing = '0px'; return w; }
+// texte révélé par masque (glisse vers le haut depuis une ligne de coupe)
+function fit(s, f, w, ls = 0) { return Math.floor(100 * w / measure(s, f, 100, ls)); }
+function maskText(s, X, base, f, size, col, p, opts = {}) {
+  if (p <= 0) return;
+  x.save(); x.beginPath(); x.rect(-50, base - size * 1.25, W + 100, size * 1.52); x.clip();
+  text(s, X, base + (1 - p) * size * 1.25, f, size, col, opts); x.restore();
+}
+function gradBottom(a, from = 0.45) {
+  if (a <= 0) return;
+  const g = x.createLinearGradient(0, H * from, 0, H);
+  g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(.55, `rgba(0,0,0,${.55 * a})`); g.addColorStop(1, `rgba(0,0,0,${.85 * a})`);
+  x.fillStyle = g; x.fillRect(0, H * from, W, H * (1 - from));
+}
+function gradTop(a) {
+  if (a <= 0) return;
+  const g = x.createLinearGradient(0, 0, 0, 420);
+  g.addColorStop(0, `rgba(0,0,0,${.6 * a})`); g.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = g; x.fillRect(0, 0, W, 420);
+}
+function hazard(X, Yp, w, h, off, alpha = 1) {        // bande « ruban de chantier »
+  x.save(); x.globalAlpha = alpha; x.beginPath(); x.rect(X, Yp, w, h); x.clip();
+  x.fillStyle = Y; x.fillRect(X, Yp, w, h); x.fillStyle = K;
+  const s = 46; for (let i = -4; i < w / s + 6; i++) {
+    const x0 = X + i * s * 2 + (off % (s * 2));
+    x.beginPath(); x.moveTo(x0, Yp + h); x.lineTo(x0 + s, Yp + h); x.lineTo(x0 + s + h, Yp); x.lineTo(x0 + h, Yp); x.fill();
+  }
+  x.restore();
+}
+function logoMark(cx, cy, s, p, spin = 0) {           // monogramme : carton + flèche « express »
+  x.save(); x.translate(cx, cy); x.scale(s * p, s * p); x.rotate(spin);
+  x.fillStyle = Y; roundRect(-60, -60, 120, 120, 22); x.fill();
+  x.fillStyle = K;                                     // carton isométrique
+  x.beginPath(); x.moveTo(-30, -14); x.lineTo(0, -30); x.lineTo(30, -14); x.lineTo(0, 2); x.closePath(); x.fill();
+  x.beginPath(); x.moveTo(-30, -6); x.lineTo(-3, 9); x.lineTo(-3, 40); x.lineTo(-30, 25); x.closePath(); x.fill();
+  x.beginPath(); x.moveTo(30, -6); x.lineTo(3, 9); x.lineTo(3, 40); x.lineTo(30, 25); x.closePath(); x.fill();
+  x.fillStyle = Y; x.fillRect(-4, -26, 8, 10);
+  x.restore();
+}
+function roundRect(X, Yp, w, h, r) { x.beginPath(); x.moveTo(X + r, Yp); x.arcTo(X + w, Yp, X + w, Yp + h, r); x.arcTo(X + w, Yp + h, X, Yp + h, r); x.arcTo(X, Yp + h, X, Yp, r); x.arcTo(X, Yp, X + w, Yp, r); x.closePath(); }
+function check(cx, cy, r, col) { x.save(); x.strokeStyle = col; x.lineWidth = r * .28; x.lineCap = 'round'; x.lineJoin = 'round'; x.beginPath(); x.moveTo(cx - r * .45, cy + r * .02); x.lineTo(cx - r * .1, cy + r * .38); x.lineTo(cx + r * .5, cy - r * .35); x.stroke(); x.restore(); }
+function phoneIcon(cx, cy, s, col) {
+  x.save(); x.translate(cx, cy); x.scale(s, s); x.fillStyle = col;
+  x.beginPath(); x.moveTo(-18, -26); x.quadraticCurveTo(-30, -22, -28, -8); x.quadraticCurveTo(-22, 18, 4, 26); x.quadraticCurveTo(18, 30, 24, 20);
+  x.lineTo(14, 8); x.quadraticCurveTo(8, 4, 2, 10); x.quadraticCurveTo(-10, 4, -14, -8); x.quadraticCurveTo(-8, -14, -10, -20); x.closePath(); x.fill(); x.restore();
+}
+
+/* ---------- 1. Ouverture ---------- */
+function intro(t) {
+  if (t > 3.2) return;
+  const out = eIn(lin(t, 2.55, 2.95));
+  gradBottom(lin(t, 0, .6) * (1 - out), .38);
+  const base = 1190, X0 = 84;
+  x.save(); x.translate(-out * 260, 0); x.globalAlpha = 1 - out;
+  // barre d'accroche
+  const bp = eOut(lin(t, .15, .65)); x.fillStyle = Y; x.fillRect(X0, base - 330, 150 * bp, 14);
+  maskText(BRAND.city, X0 + 172 * bp, base - 313, 'IS', 34, WH, eOut(lin(t, .35, .85)), { ls: 6 });
+  const s1 = fit(BRAND.l1, 'IB', 912, -2), s2 = fit(BRAND.l2, 'IB', 912, -6);
+  maskText(BRAND.l1, X0 - 4, base - 95, 'IB', s1, WH, eOut(lin(t, .3, .9)), { shadow: 30, ls: -2 });
+  const ls = 2 - 8 * eOut(lin(t, .45, 2.4));
+  maskText(BRAND.l2, X0 - 8, base + 120, 'IB', s2, Y, eOut(lin(t, .45, 1.05)), { shadow: 40, ls });
+  // trait de vitesse
+  const sp = lin(t, .7, 1.3); if (sp > 0 && sp < 1) { x.fillStyle = 'rgba(228,255,26,.9)'; const w = 420 * Math.sin(sp * Math.PI); x.fillRect(X0 + 720 * eOut(sp) - w / 2 + 120, base + 40, w, 6); }
+  maskText(BRAND.tagline, X0, base + 215, 'IM', 50, WH, eOut(lin(t, 1.25, 1.8)), { shadow: 20 });
+  x.restore();
+  // ouverture au noir
+  const fa = 1 - eOut(lin(t, 0, .55)); if (fa > 0) { x.fillStyle = `rgba(0,0,0,${fa})`; x.fillRect(0, 0, W, H); }
+}
+
+/* ---------- 2. Volets de transition (cachent les coupes) ---------- */
+function wipe(t, T) {
+  const d = .75, p = lin(t, T - d / 2, T + d / 2); if (p <= 0 || p >= 1) return;
+  const bands = [[O, 0], [Y, .07], [K, .14]];
+  const span = W + H * .58 + 600;
+  for (const [col, lag] of bands) {
+    const q = clamp((p - lag) / (1 - .14));
+    const head = eIO(clamp(q * 1.6)) * span, tail = eIO(clamp(q * 1.6 - .6)) * span;
+    if (head - tail < 1) continue;
+    x.save(); x.fillStyle = col; x.translate(-300, 0); x.transform(1, 0, -.58, 1, 0, 0);
+    x.fillRect(tail + H * .0, 0, head - tail, H); x.restore();
+  }
+  // éclat lumineux (light leak) au moment de la coupe
+  const f = Math.max(0, 1 - Math.abs(t - T) / .35); if (f > 0) {
+    const g = x.createRadialGradient(W * .8, H * .25, 0, W * .8, H * .25, H * .7);
+    g.addColorStop(0, `rgba(255,170,60,${.35 * f})`); g.addColorStop(1, 'rgba(255,120,30,0)'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  }
+}
+
+/* ---------- 3. Titres de section ---------- */
+function section(t, S) {
+  const a = S.t, b = a + 2.75; if (t < a || t > b + .5) return;
+  const k = io(t, a, .5, b - .1, .45);
+  gradBottom(k, .5);
+  const X0 = 84, base = 1515;
+  x.save(); x.translate(0, (1 - k) * 40);
+  // numéro en contour
+  const np = eOut(lin(t, a, a + .6)) * (1 - eIn(lin(t, b - .1, b + .3)));
+  x.save(); x.globalAlpha = np; font('IB', 230); x.lineWidth = 4; x.strokeStyle = Y; x.textAlign = 'left';
+  x.strokeText(S.n, X0 - 8, base - 268 + (1 - np) * 60); x.restore();
+  const o1 = 1 - eIn(lin(t, b - .1, b + .35));
+  maskText(S.a, X0, base - 110, 'IB', 104, WH, eOut(lin(t, a + .12, a + .62)) * o1, { shadow: 24, ls: -1 });
+  // mot surligné
+  const hw = measure(S.b, 'IB', 104, -1) + 40, hp = eOut(lin(t, a + .3, a + .8)) * o1;
+  x.fillStyle = Y; x.fillRect(X0 - 20, base - 92, hw * hp, 124);
+  maskText(S.b, X0, base + 6, 'IB', 104, K, eOut(lin(t, a + .42, a + .9)) * o1, { ls: -1 });
+  maskText(S.s, X0, base + 112, 'IM', 46, WH, eOut(lin(t, a + .6, a + 1.1)) * o1, { shadow: 16 });
+  x.restore();
+}
+
+/* ---------- 4. Encarts « check » ---------- */
+function chip(t, C) {
+  if (t < C.t0 - .1 || t > C.t1 + .5) return;
+  const k = io(t, C.t0, .45, C.t1, .35), sc = eBack(lin(t, C.t0, C.t0 + .45));
+  gradTop(k);
+  const w = measure(C.txt, 'IX', 50) + 150, h = 104, X0 = 70, Y0 = 250;
+  x.save(); x.globalAlpha = k; x.translate(X0, Y0 + h / 2); x.scale(.8 + .2 * sc, .8 + .2 * sc); x.translate(0, -h / 2);
+  x.shadowColor = 'rgba(0,0,0,.45)'; x.shadowBlur = 30; x.shadowOffsetY = 8;
+  x.fillStyle = 'rgba(11,11,12,.86)'; roundRect(0, 0, w * eOut(lin(t, C.t0, C.t0 + .5)), h, 52); x.fill();
+  x.shadowColor = 'transparent';
+  x.fillStyle = Y; x.beginPath(); x.arc(52, h / 2, 34, 0, Math.PI * 2); x.fill(); check(52, h / 2, 30, K);
+  x.save(); x.beginPath(); x.rect(0, 0, w * eOut(lin(t, C.t0 + .1, C.t0 + .6)), h); x.clip();
+  text(C.txt, 108, h / 2 + 18, 'IX', 50, WH); x.restore();
+  x.restore();
+}
+
+/* ---------- 5. Signature permanente (coin haut) ---------- */
+function bug(t) {
+  const k = io(t, 3.4, .6, 27.0, .35); if (k <= 0) return;
+  x.save(); x.globalAlpha = k * .95; x.translate(0, (1 - k) * -20);
+  logoMark(110, 128, .42, 1);
+  text(BRAND.l1, 150, 120, 'IB', 30, WH, { ls: 2, shadow: 14 });
+  text(BRAND.l2, 150, 154, 'IB', 30, Y, { ls: 8, shadow: 14 });
+  x.restore();
+}
+
+/* ---------- 6. Final sur le salon livré ---------- */
+function finale(t) {
+  const a = 24.75, b = 27.2; if (t < a || t > b + .4) return;
+  const k = io(t, a, .5, b, .3); gradBottom(k, .45);
+  const X0 = 84, base = 1450, o = 1 - eIn(lin(t, b, b + .3));
+  ['Livré.', 'Installé.', 'Sans stress.'].forEach((s, i) => {
+    const p = eOut(lin(t, a + .15 + i * .32, a + .7 + i * .32)) * o;
+    maskText(s, X0, base + i * 128, 'IB', 118, i === 2 ? Y : WH, p, { shadow: 30, ls: -2 });
+  });
+}
+
+/* ---------- 7. Carte de fin ---------- */
+function outro(t) {
+  const a = 27.5; if (t < a - .4) return;
+  const bg = eOut(lin(t, a - .38, a)); if (bg <= 0) return;
+  x.save(); x.globalAlpha = bg;
+  x.fillStyle = K; x.fillRect(0, 0, W, H);
+  const pulse = .5 + .5 * Math.sin((t - a) * 2.2);
+  let g = x.createRadialGradient(W / 2, 760, 0, W / 2, 760, 900);
+  g.addColorStop(0, `rgba(228,255,26,${.13 + .04 * pulse})`); g.addColorStop(1, 'rgba(228,255,26,0)'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  g = x.createRadialGradient(W, H, 0, W, H, 900); g.addColorStop(0, 'rgba(255,106,19,.22)'); g.addColorStop(1, 'rgba(255,106,19,0)'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  // grille perspective subtile
+  x.strokeStyle = 'rgba(255,255,255,.05)'; x.lineWidth = 2;
+  for (let i = -10; i <= 10; i++) { x.beginPath(); x.moveTo(W / 2 + i * 40, 1180); x.lineTo(W / 2 + i * 260, H); x.stroke(); }
+  const sc = ((t - a) * 160) % 120;
+  for (let j = 0; j < 9; j++) { const yy = 1180 + Math.pow((j * 120 + sc) / 1080, 2) * 740; x.beginPath(); x.moveTo(0, yy); x.lineTo(W, yy); x.stroke(); }
+  x.restore();
+  if (t < a) return;
+  const tt = t - a;
+  // bandes chantier haut / bas
+  hazard(0, 0, W * eOut(lin(tt, .05, .6)), 34, tt * 120);
+  hazard(W - W * eOut(lin(tt, .05, .6)), H - 34, W, 34, -tt * 120);
+  // logo
+  const lp = eBack(lin(tt, .1, .7)); logoMark(W / 2, 560, 1.55, lp, (1 - lin(tt, .1, .7)) * -.5);
+  x.save(); x.textAlign = 'center';
+  maskText(BRAND.l1, W / 2, 820, 'IB', 112, WH, eOut(lin(tt, .3, .8)), { align: 'center', ls: -1 });
+  maskText(BRAND.l2, W / 2, 1010, 'IB', 196, Y, eOut(lin(tt, .42, .95)), { align: 'center', ls: 6 - 8 * eOut(lin(tt, .42, 3)) });
+  maskText(BRAND.city, W / 2, 1090, 'IS', 36, 'rgba(255,255,255,.75)', eOut(lin(tt, .6, 1.1)), { align: 'center', ls: 8 });
+  x.restore();
+  // CTA
+  const cp = eOut(lin(tt, .9, 1.4)); const cw = measure(BRAND.cta, 'IB', 50, 2) + 110;
+  x.save(); x.globalAlpha = cp; x.translate(W / 2, 1270); x.scale(.9 + .1 * eBack(lin(tt, .9, 1.4)), .9 + .1 * eBack(lin(tt, .9, 1.4)));
+  x.fillStyle = Y; roundRect(-cw / 2, -60, cw, 120, 60); x.fill();
+  text(BRAND.cta, 0, 18, 'IB', 50, K, { align: 'center', ls: 2 }); x.restore();
+  // téléphone
+  const pp = eOut(lin(tt, 1.2, 1.75)), pw = measure(BRAND.phone, 'IB', 82) + 96;
+  x.save(); x.globalAlpha = pp;
+  const ring = Math.sin(tt * 18) * .12 * Math.max(0, Math.sin((tt - 1.8) * 2.5));
+  x.save(); x.translate(W / 2 - pw / 2 + 32, 1440); x.rotate(ring); phoneIcon(0, 0, 1.25, Y); x.restore();
+  maskText(BRAND.phone, W / 2 - pw / 2 + 96, 1470, 'IB', 82, WH, pp, {});
+  x.restore();
+  // fondu final
+  const fe = lin(t, END - .3, END); if (fe > 0) { x.fillStyle = `rgba(0,0,0,${fe})`; x.fillRect(0, 0, W, H); }
+}
+
+function render(t) {
+  x.clearRect(0, 0, W, H);
+  bug(t);
+  intro(t);
+  SECTIONS.forEach(S => section(t, S));
+  CHIPS.forEach(C => chip(t, C));
+  finale(t);
+  outro(t);
+  CUTS.forEach(T => wipe(t, T));
+  return c.toDataURL('image/png');
+}
+window.ready = Promise.all(['IB', 'IX', 'IS', 'IM'].map(f => document.fonts.load(`40px ${f}`, 'ÉÀ'))).then(() => true);
+</script></body></html>
