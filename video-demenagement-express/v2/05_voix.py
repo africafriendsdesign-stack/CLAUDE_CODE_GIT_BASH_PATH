@@ -9,8 +9,8 @@ sc = json.load(open(os.environ.get('SCENARIO') or os.path.join(os.path.dirname(o
 lines = [(p['id'], p['vo']) for p in sc['plans'] if p.get('vo')] + [('END', sc['end_vo'])]
 for pid, txt in lines:
     wav = os.path.join(out, pid + '.wav')
-    subprocess.run([sys.executable, '-m', 'piper', '-m', model, '-f', wav, '--length-scale', ls,
-                    '--noise-scale', '0.62', '--noise-w-scale', '0.8', '--', txt], check=True,
+    subprocess.run([sys.executable, '-m', 'piper', '-m', model, '-f', wav] + (['-s', os.environ['SPEAKER']] if os.environ.get('SPEAKER') else []) + [ '--length-scale', ls,
+                    '--noise-scale', os.environ.get('NOISE', '0.35'), '--noise-w-scale', os.environ.get('NOISE_W', '0.4'), '--', txt], check=True,
                    capture_output=True, cwd='/tmp')
     d = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', wav],
                        capture_output=True, text=True).stdout.strip()

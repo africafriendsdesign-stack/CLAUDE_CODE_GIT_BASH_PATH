@@ -43,8 +43,9 @@ with wave.open(os.path.join(out, 'vo_raw.wav'), 'wb') as w:
     w.setnchannels(1); w.setsampwidth(2); w.setframerate(sr); w.writeframes((np.clip(mix, -1, 1) * 32767).astype('<i2').tobytes())
 # traitement « voix radio » : passe-haut, présence, compression, un soupçon de réverb
 subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', os.path.join(out, 'vo_raw.wav'), '-af',
-    'highpass=f=85,equalizer=f=220:t=q:w=1:g=-2,equalizer=f=3200:t=q:w=1.2:g=3.5,equalizer=f=9000:t=h:w=1:g=2,'
-    'acompressor=threshold=-20dB:ratio=3.5:attack=5:release=120:makeup=4,aecho=0.8:0.5:35|60:0.12|0.07,aresample=48000',
+    # voix propre : pas d'écho (les échos courts créaient un effet métallique « tremblant »), compression douce
+    'highpass=f=80,equalizer=f=250:t=q:w=1:g=-1.5,equalizer=f=3000:t=q:w=1.5:g=2,'
+    'acompressor=threshold=-18dB:ratio=2:attack=15:release=250:makeup=2,aresample=48000',
     '-ac', '2', os.path.join(out, 'vo.wav')], check=True)
 # sections graphiques (v3) : de 'from' à 'to' inclus
 pos = {p['id']: p for p in plans}
