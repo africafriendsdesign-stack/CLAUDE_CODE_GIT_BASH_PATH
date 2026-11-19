@@ -44,6 +44,7 @@ with wave.open(os.path.join(out, 'vo_raw.wav'), 'wb') as w:
 # traitement « voix radio » : passe-haut, présence, compression, un soupçon de réverb
 subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', os.path.join(out, 'vo_raw.wav'), '-af',
     # voix propre : pas d'écho (les échos courts créaient un effet métallique « tremblant »), compression douce
+    os.environ.get('VO_FX', '') +   # ex. voix « pub » : rubberband (grave) + chaleur
     'highpass=f=80,equalizer=f=250:t=q:w=1:g=-1.5,equalizer=f=3000:t=q:w=1.5:g=2,'
     'acompressor=threshold=-18dB:ratio=2:attack=15:release=250:makeup=2,aresample=48000',
     '-ac', '2', os.path.join(out, 'vo.wav')], check=True)
